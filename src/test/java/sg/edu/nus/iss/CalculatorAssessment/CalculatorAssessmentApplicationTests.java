@@ -13,6 +13,14 @@ import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Optional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -24,6 +32,12 @@ class CalculatorAssessmentApplicationTests {
 	@Autowired
 	MockMvc mvc;
 
+	@Test
+	void contextLoads(){
+
+		assertNotNull(calControl);
+	}
+
 
 	@Test
 	void shoudReturnCorrectResult() throws Exception{
@@ -33,7 +47,7 @@ class CalculatorAssessmentApplicationTests {
 							.add("oper2", 2)
 							.add("ops", "plus").build();
 
-		RequestBuilder req = MockMvcRequestBuilders.post("/calculator")
+		RequestBuilder req = MockMvcRequestBuilders.post("/calculate")
 				.contentType(MediaType.APPLICATION_JSON_VALUE)
 				.content(body.toString())
 				.accept(MediaType.APPLICATION_JSON_VALUE)
@@ -42,7 +56,29 @@ class CalculatorAssessmentApplicationTests {
 		MvcResult resp = mvc.perform(req).andReturn();
 		MockHttpServletResponse httpResp = resp.getResponse();
 
-		Assertions.assertEquals(httpResp.getStatus(), 404);																								
+		assertEquals(200, httpResp.getStatus());
+		
+		Optional<JsonObject> opt = string2Json(httpResp.getContentAsString());
+		assertTrue(opt.isPresent());
+
+		JsonObject obj = opt.get();
+
+		for(String s: List.of("result","timestamp","userAgent")){
+			assertFalse(obj.isNull(s));
+		}
+
+		assertEquals(3, obj.getInt("result"));
+
+	}
+
+	public static Optional<JsonObject> string2Json(String s){
+		try (InputStream is = new ByteArrayInputStream(s.getBytes())) {
+			JsonReader reader = Json.createReader(is);
+			return Optional.of(reader.readObject());
+		} catch (Exception ex) {
+			System.err.printf("Error: %s\n", ex.getMessage());
+			return Optional.empty();
+	}
 
 	}
 }

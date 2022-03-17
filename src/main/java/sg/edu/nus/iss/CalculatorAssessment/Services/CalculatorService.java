@@ -37,7 +37,7 @@ public class CalculatorService {
                 answer = oper1 / oper2;
                 break;
             default:
-                break;
+                throw new IllegalArgumentException("Incorrect operator: %s".formatted(ops));
 
         }
 
